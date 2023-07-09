@@ -1,4 +1,4 @@
-package hhhash
+package main
 
 import (
 	"bufio"
@@ -104,4 +104,21 @@ func GenerateHHHash(headers []string) string {
 	data := strings.Join(headers, ":")
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("hhh:1:%x", hash)
+}
+
+func main() {
+
+	// Check if URL is passed as command line argument
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: hhhash <url>")
+		os.Exit(1)
+	}
+
+	// Make HTTP request, extract headers and generate a hash from headers
+	resp := MakeHTTPRequest(os.Args[1])
+	headers := ExtractHeaderKeys(resp)
+	hhhash := GenerateHHHash(headers)
+
+	fmt.Println(hhhash)
+
 }
