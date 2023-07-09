@@ -1,0 +1,35 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Output files
+*.o
+*.a
+
+# Go related files
+# Binary files for packages and modules
+*.test
+*.out
+*.prof
+
+# Compiled Go source code
+*.test
+*.prof
+
+# Compiled Object files, Static and Shared libraries (in case you build your own)
+*.o
+*.a
+*.so
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Compiled CGO files
+_cgo_*
+
+# Build directories
+*.test/
+*.prof/
+
