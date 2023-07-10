@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -17,13 +18,12 @@ import (
 // MakeHTTPRequest function takes a raw URL string as input,
 // parses the URL and establishes a TCP connection based on the scheme (HTTP or HTTPS).
 // It then sends a GET request and returns the response as a byte array.
-func MakeHTTPRequest(rawURL string) []byte {
+func MakeHTTPRequest(rawURL string) ([]byte, error) {
 
 	// Parse the raw URL
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return []byte{}
+		return nil, err
 	}
 
 	// Default port based on the URL scheme
@@ -34,7 +34,7 @@ func MakeHTTPRequest(rawURL string) []byte {
 			port = "80"
 		}
 		conn, _ := net.Dial("tcp", parsedURL.Host+":"+port)
-		return handleConnection(conn, err, parsedURL.Host, parsedURL.Path)
+		return handleConnection(conn, err, parsedURL.Host, parsedURL.Path), nil
 	} else if parsedURL.Scheme == "https" {
 		if port == "" {
 			port = "443"
@@ -46,10 +46,9 @@ func MakeHTTPRequest(rawURL string) []byte {
 		}
 		tlsConn := tls.Client(conn, tlsConfig)
 		err = tlsConn.Handshake()
-		return handleConnection(tlsConn, err, parsedURL.Host, parsedURL.Path)
+		return handleConnection(tlsConn, err, parsedURL.Host, parsedURL.Path), nil
 	} else {
-		fmt.Fprintln(os.Stderr, "Invalid URL")
-		return []byte{}
+		return nil, errors.New("Invalid URL")
 	}
 }
 
@@ -109,6 +108,16 @@ func GenerateHHHash(headers []string) string {
 	return fmt.Sprintf("hhh:1:%x", hash)
 }
 
+// function checks given string is a valid URL or not
+func isValidURL(url string) bool {
+	// check if the string starts with http:// or https://
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return false
+	}
+
+	return true
+}
+
 func main() {
 
 	// Check if URL is passed as command line argument
@@ -117,8 +126,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if !isValidURL(os.Args[1]) {
+		fmt.Println("Given URL is not valid\nCorrect format: http(s)://<domain>/")
+		os.Exit(1)
+	}
+
 	// Make HTTP request, extract headers and generate a hash from headers
-	resp := MakeHTTPRequest(os.Args[1])
+	resp, err := MakeHTTPRequest(os.Args[1])
+	if err != nil {
+		fmt.Printf("error occured while making HTTP request: %v\n", err.Error())
+		os.Exit(1)
+	}
 	headers := ExtractHeaderKeys(resp)
 	hhhash := GenerateHHHash(headers)
 
